@@ -17,3 +17,5 @@ class TableBook(SQLModel, table=True):
 
     def __repr__(self):
         return f"<Book {self.uid} - {self.title}>"
+    
+    

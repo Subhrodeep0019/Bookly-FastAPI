@@ -6,15 +6,21 @@ from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.books.service import BookService
 from typing import List
+from src.auth.dependencies import AccessTokenBearer
+
 
 book_router = APIRouter()
 book_service = BookService()
-
+access_token_bearer = AccessTokenBearer()
 @book_router.get(
     "/",
     response_model = List[ModelBook]
 ) # response_model only verifies at last (while returning) and response matches ModelBook
-async def get_all_books(session: AsyncSession = Depends(get_session)):
+async def get_all_books(
+        session: AsyncSession = Depends(get_session),
+        token_data=Depends(access_token_bearer)
+):
+    print(token_data)
     all_books = await book_service.get_all_books(session)
     return all_books
 
@@ -25,7 +31,11 @@ async def get_all_books(session: AsyncSession = Depends(get_session)):
     status_code = status.HTTP_201_CREATED,
     response_model=ModelBook
 )
-async def add_book(bookData: ModelCreateBook, session: AsyncSession = Depends(get_session)):
+async def add_book(
+    bookData: ModelCreateBook,
+    session: AsyncSession = Depends(get_session),
+    token_data=Depends(access_token_bearer)
+):
     new_created_book = await book_service.create_book(bookData, session)
 
     return new_created_book
@@ -35,7 +45,11 @@ async def add_book(bookData: ModelCreateBook, session: AsyncSession = Depends(ge
     "/{bid}",
     response_model=ModelBook
 )
-async def get_a_book(bid: UUID, session: AsyncSession = Depends(get_session)):
+async def get_a_book(
+    bid: UUID,
+    session: AsyncSession = Depends(get_session),
+    token_data=Depends(access_token_bearer)
+):
     single_book = await book_service.get_a_book(bid, session)
     if single_book:
         return single_book
@@ -49,7 +63,11 @@ async def get_a_book(bid: UUID, session: AsyncSession = Depends(get_session)):
     "/{bid}",
     response_model=ModelBook
 )
-async def upd_book(bid: UUID, updData: ModelUpdBook, session: AsyncSession = Depends(get_session)):
+async def upd_book(
+    bid: UUID, updData: ModelUpdBook,
+    session: AsyncSession = Depends(get_session),
+    token_data=Depends(access_token_bearer)
+):
     updated_book = await book_service.update_book(bid, updData, session)
     if updated_book:
         return updated_book
@@ -64,7 +82,11 @@ async def upd_book(bid: UUID, updData: ModelUpdBook, session: AsyncSession = Dep
     status_code=status.HTTP_200_OK,
     response_model=ModelBook
 )
-async def del_book(bid: UUID, session: AsyncSession = Depends(get_session)):
+async def del_book(
+    bid: UUID,
+    session: AsyncSession = Depends(get_session),
+    token_data=Depends(access_token_bearer)
+):
     deleted_book = await book_service.delete_book(bid, session)
     if deleted_book:
         return deleted_book

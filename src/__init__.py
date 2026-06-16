@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from src.books.book_routes import book_router
+from src.auth.routes import auth_router
 from contextlib import asynccontextmanager
 from src.db.main import init_db
 
@@ -18,7 +19,8 @@ app = FastAPI(
     version = ver,
     lifespan=life_span
 )
-app.include_router(book_router, prefix=f"/api/{ver}/books")
+app.include_router(book_router, prefix=f"/{ver}/books")
+app.include_router(auth_router,  prefix=f"/{ver}/auth")
 
 @app.get("/")
 async def home():

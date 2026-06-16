@@ -14,7 +14,6 @@ class BookService:
 
         return result.all() # returns a list of book obj
 
-
     async def get_a_book(self, book_uid: UUID, session: AsyncSession):
 
         statement = select(Book).where(Book.uid == book_uid)
@@ -34,7 +33,6 @@ class BookService:
 
         return new_book
 
-
     async def update_book(self,book_uid: UUID, upd_details: ModelUpdBook, session: AsyncSession):
 
         book_to_upd = await self.get_a_book(book_uid, session)
@@ -49,7 +47,6 @@ class BookService:
             return book_to_upd
         else:
             return None
-
 
     async def delete_book(self, book_uid: UUID, session: AsyncSession):
         book_to_delete = await self.get_a_book(book_uid, session)
