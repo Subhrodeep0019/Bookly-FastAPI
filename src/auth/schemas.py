@@ -22,3 +22,17 @@ class UserResponseModel(BaseModel):
 class LoginModel(BaseModel):
     email: str
     pswd: str
+
+class UserDataModel(BaseModel):
+    email: str
+    user_uid: str
+
+class LoginResponseModel(BaseModel):
+    message: str
+    access_token: str
+    refresh_token: str
+    user: UserDataModel
+
+class RefreshResponseModel(BaseModel):
+    access_token: str
+    user: UserDataModel

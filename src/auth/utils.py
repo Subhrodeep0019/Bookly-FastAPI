@@ -6,7 +6,7 @@ from src.config import setting
 import logging
 
 
-access_token_expiry = 3600 # 1 hour
+access_token_expiry = 600 # 5 min
 pass_hash = PasswordHash.recommended()
 
 def generate_hash(pwd: str) -> str:
@@ -22,9 +22,6 @@ def create_token(user_data: dict, expiry: timedelta|None = None, refresh: bool =
     payload = {
         "user": user_data,
         "exp": datetime.now(timezone.utc) + expiry,
-        # same payload info(w/o uuid) can generate same jwt token
-        # so using uuid to generate absolutely unique jwt token
-        # at every login from same user
         "jti": str(uuid4()),
         "refresh": refresh
     }

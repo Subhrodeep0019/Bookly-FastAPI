@@ -12,15 +12,15 @@ from src.auth.dependencies import AccessTokenBearer
 book_router = APIRouter()
 book_service = BookService()
 access_token_bearer = AccessTokenBearer()
+
 @book_router.get(
     "/",
     response_model = List[ModelBook]
 ) # response_model only verifies at last (while returning) and response matches ModelBook
 async def get_all_books(
         session: AsyncSession = Depends(get_session),
-        token_data=Depends(access_token_bearer)
+        token_data: dict =Depends(access_token_bearer)
 ):
-    print(token_data)
     all_books = await book_service.get_all_books(session)
     return all_books
 
@@ -34,7 +34,7 @@ async def get_all_books(
 async def add_book(
     bookData: ModelCreateBook,
     session: AsyncSession = Depends(get_session),
-    token_data=Depends(access_token_bearer)
+    token_data: dict =Depends(access_token_bearer)
 ):
     new_created_book = await book_service.create_book(bookData, session)
 
@@ -48,7 +48,7 @@ async def add_book(
 async def get_a_book(
     bid: UUID,
     session: AsyncSession = Depends(get_session),
-    token_data=Depends(access_token_bearer)
+    token_data: dict =Depends(access_token_bearer)
 ):
     single_book = await book_service.get_a_book(bid, session)
     if single_book:
@@ -66,7 +66,7 @@ async def get_a_book(
 async def upd_book(
     bid: UUID, updData: ModelUpdBook,
     session: AsyncSession = Depends(get_session),
-    token_data=Depends(access_token_bearer)
+    token_data: dict =Depends(access_token_bearer)
 ):
     updated_book = await book_service.update_book(bid, updData, session)
     if updated_book:
@@ -85,7 +85,7 @@ async def upd_book(
 async def del_book(
     bid: UUID,
     session: AsyncSession = Depends(get_session),
-    token_data=Depends(access_token_bearer)
+    token_data: dict =Depends(access_token_bearer)
 ):
     deleted_book = await book_service.delete_book(bid, session)
     if deleted_book:

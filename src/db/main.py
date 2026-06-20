@@ -8,7 +8,7 @@ from src.config import setting
 
 engine = create_async_engine(
     url=setting.DATABASE_URL,
-    echo=True
+    echo=False
 )
 
 async def init_db():

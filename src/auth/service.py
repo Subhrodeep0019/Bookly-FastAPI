@@ -6,7 +6,7 @@ from sqlmodel import select
 
 class UserService:
 
-    async def get_user_by_email(self, email: str, session: AsyncSession):
+    async def get_user_by_email(self, email: str, session: AsyncSession) -> User | None:
         statement = select(User).where(User.email==email)
         res = await session.exec(statement)
         # returns 'None' if user doesn't exist
@@ -16,7 +16,7 @@ class UserService:
         # convert into 'User' ORM
         my_user = User(**(user_data.model_dump()))
 
-        existing_user = await self.get_user(my_user.email, session)
+        existing_user = await self.get_user_by_email(my_user.email, session)
         if existing_user is None:
 
             hashed_pass = generate_hash(my_user.pswd)
