@@ -1,29 +1,55 @@
 from fastapi import APIRouter, status, Depends
-from fastapi.exceptions import HTTPException
-from uuid import UUID
-from src.books.schemas import ModelBook, ModelCreateBook, ModelUpdBook
-from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.books.service import BookService
+from uuid import UUID
 from typing import List
-from src.auth.dependencies import AccessTokenBearer
+
+from .schemas import (
+    ModelBook,
+    ModelCreateBook,
+    ModelUpdBook,
+    BookWithReview
+)
+
+from src.db.main import get_session
+from src.books.service import BookService
+from src.auth.dependencies import AccessTokenBearer, RoleChecker
+from src.errors import BookNotFound
 
 
-book_router = APIRouter()
+
 book_service = BookService()
 access_token_bearer = AccessTokenBearer()
+role_checker = RoleChecker(["admin", "user"])
+
+
+book_router = APIRouter(dependencies=[
+    Depends(access_token_bearer),
+    Depends(role_checker)
+])
+
 
 @book_router.get(
     "/",
     response_model = List[ModelBook]
 ) # response_model only verifies at last (while returning) and response matches ModelBook
 async def get_all_books(
-        session: AsyncSession = Depends(get_session),
-        token_data: dict =Depends(access_token_bearer)
+    session: AsyncSession = Depends(get_session),
+    payload = Depends(access_token_bearer)
 ):
     all_books = await book_service.get_all_books(session)
     return all_books
 
+@book_router.get(
+    "/my_books",
+    response_model = List[ModelBook]
+)
+async def get_my_books(
+        session: AsyncSession = Depends(get_session),
+        payload: dict = Depends(access_token_bearer)
+):
+    my_uid = UUID(payload.get('user').get('user_uid'))
+    my_books = await book_service.get_my_books(my_uid, session)
+    return my_books
 
 # receives JSON, converted into pydantic obj while received in arg, then model_dump() convert it into dict.
 @book_router.post(
@@ -34,30 +60,28 @@ async def get_all_books(
 async def add_book(
     bookData: ModelCreateBook,
     session: AsyncSession = Depends(get_session),
-    token_data: dict =Depends(access_token_bearer)
+    payload: dict = Depends(access_token_bearer)
 ):
-    new_created_book = await book_service.create_book(bookData, session)
+    user_uid = payload.get('user').get('user_uid')
+    new_created_book = await book_service.create_book(bookData,user_uid, session)
 
     return new_created_book
 
 
 @book_router.get(
     "/{bid}",
-    response_model=ModelBook
+    response_model=BookWithReview
 )
 async def get_a_book(
     bid: UUID,
     session: AsyncSession = Depends(get_session),
-    token_data: dict =Depends(access_token_bearer)
+    payload = Depends(access_token_bearer)
 ):
     single_book = await book_service.get_a_book(bid, session)
-    if single_book:
-        return single_book
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail= "book not found"
-        )
+    if not single_book:
+        raise BookNotFound()
+
+    return single_book
 
 @book_router.patch(
     "/{bid}",
@@ -66,16 +90,13 @@ async def get_a_book(
 async def upd_book(
     bid: UUID, updData: ModelUpdBook,
     session: AsyncSession = Depends(get_session),
-    token_data: dict =Depends(access_token_bearer)
+    payload = Depends(access_token_bearer)
 ):
     updated_book = await book_service.update_book(bid, updData, session)
-    if updated_book:
-        return updated_book
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="book not found"
-        )
+    if not updated_book:
+        raise BookNotFound()
+
+    return updated_book
 
 @book_router.delete(
     "/{bid}",
@@ -85,13 +106,10 @@ async def upd_book(
 async def del_book(
     bid: UUID,
     session: AsyncSession = Depends(get_session),
-    token_data: dict =Depends(access_token_bearer)
+    payload = Depends(access_token_bearer)
 ):
     deleted_book = await book_service.delete_book(bid, session)
-    if deleted_book:
-        return deleted_book
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="book not found"
-        )
+    if not deleted_book:
+        raise BookNotFound()
+
+    return deleted_book

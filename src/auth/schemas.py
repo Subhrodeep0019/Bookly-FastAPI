@@ -1,4 +1,6 @@
+from typing import List
 from uuid import UUID
+from src.db.model import TableBook, Reviews
 from datetime import datetime
 from pydantic import BaseModel, Field
 
@@ -18,6 +20,10 @@ class UserResponseModel(BaseModel):
     is_verified: bool
     created_at: datetime
     updated_at: datetime
+
+class UserWithBookAndReviews(UserResponseModel):
+    books: List[TableBook]
+    reviews: List[Reviews]
 
 class LoginModel(BaseModel):
     email: str

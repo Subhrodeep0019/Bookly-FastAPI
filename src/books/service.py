@@ -1,12 +1,13 @@
-import datetime
-
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
-from .model import TableBook as Book
+from src.db.model import TableBook as Book
 from sqlmodel import select, desc
 from .schemas import ModelCreateBook, ModelUpdBook
+import datetime
+
 
 class BookService:
+
     async def get_all_books(self, session: AsyncSession):
 
         statement = select(Book).order_by(desc(Book.created_at))
@@ -14,7 +15,12 @@ class BookService:
 
         return result.all() # returns a list of book obj
 
-    async def get_a_book(self, book_uid: UUID, session: AsyncSession):
+    async def get_my_books(self, my_uid: UUID, session: AsyncSession):
+        statement = select(Book).where(Book.user_uid==my_uid).order_by(desc(Book.created_at))
+        my_books = await session.exec(statement)
+        return my_books.all()
+
+    async def get_a_book(self, book_uid: UUID, session: AsyncSession) -> Book | None:
 
         statement = select(Book).where(Book.uid == book_uid)
         result = await session.exec(statement)
@@ -22,11 +28,11 @@ class BookService:
         # returns None if no books is found
         return result.first() # returns a Book obj
 
-    async def create_book(self, book_details: ModelCreateBook, session: AsyncSession):
+    async def create_book(self, book_details: ModelCreateBook, user_uid: str, session: AsyncSession):
 
         book_details_dict = book_details.model_dump()
         new_book = Book(**book_details_dict)   #unpacks dict and Book() creates a TableBook obj and saves into new_book
-
+        new_book.user_uid = UUID(user_uid)
         session.add(new_book) # obj enter into session's pending state
         await session.commit() # actual SQL command is sent to psql
         await session.refresh(new_book)

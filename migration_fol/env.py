@@ -9,8 +9,8 @@ from alembic import context
 from src.config import setting
 
 from sqlmodel import SQLModel
-from src.books.model import TableBook
-from src.auth.model import User
+from src.db.model import TableBook
+from src.db.model import User
 
 
 db_url = setting.DATABASE_URL

@@ -6,7 +6,7 @@ from src.config import setting
 import logging
 
 
-access_token_expiry = 600 # 5 min
+access_token_expiry = 600 # 10 min
 pass_hash = PasswordHash.recommended()
 
 def generate_hash(pwd: str) -> str:

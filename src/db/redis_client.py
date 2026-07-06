@@ -1,7 +1,7 @@
 import redis.asyncio as redis
 from src.config import setting
 
-jti_expiry=600 # 5 min
+jti_expiry=600 # 10 min
 
 token_blocklist = redis.Redis(
     host=setting.REDIS_HOST,

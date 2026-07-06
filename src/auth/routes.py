@@ -1,20 +1,43 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from .schemas import UserCreateModel, UserResponseModel, LoginModel, UserDataModel, LoginResponseModel, RefreshResponseModel
-from .service import UserService
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.db.main import get_session
-from .utils import create_token, verify_pass
 from datetime import timedelta
-from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_curr_user
+
+from .schemas import (
+    UserCreateModel,
+    UserResponseModel,
+    LoginModel,
+    UserDataModel,
+    LoginResponseModel,
+    RefreshResponseModel,
+    UserWithBookAndReviews
+)
+from .service import UserService
+from .utils import create_token, verify_pass
+from .dependencies import (
+    RefreshTokenBearer,
+    AccessTokenBearer,
+    get_curr_user,
+    RoleChecker
+)
+
+from src.db.main import get_session
 from src.db.redis_client import add_to_blocklist
+from src.errors import (
+    UserAlreadyExists,
+    InvalidCredentials,
+    UserNotFound
+)
+
+
+
 
 REFRESH_EXP_DAY = 2
-
 
 auth_router = APIRouter()
 user_service = UserService()
 refresh_token_bearer = RefreshTokenBearer()
+role_checker = RoleChecker(['admin', 'user'])
 
 @auth_router.post(
     "/signup",
@@ -29,10 +52,7 @@ async def create_user(
     if new_user is not None:
         return new_user
     else:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="user already exists with this email"
-        )
+        raise UserAlreadyExists()
 
 
 
@@ -55,14 +75,16 @@ async def login_user(
             access_token = create_token(
                 user_data={
                     'email': user.email,
-                    'user_uid': str(user.uid)
+                    'user_uid': str(user.uid),
+                    'role': user.role
                 }
             )
 
             refresh_token = create_token(
                 user_data={
                     'email': user.email,
-                    'user_uid': str(user.uid)
+                    'user_uid': str(user.uid),
+                    'role': user.role
                 },
                 refresh=True,
                 expiry=timedelta(days=REFRESH_EXP_DAY)
@@ -74,10 +96,7 @@ async def login_user(
                 refresh_token=refresh_token,
                 user= UserDataModel(email=email, user_uid=str(user.uid))
             )
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Invalid Email or Password"
-    )
+    raise InvalidCredentials()
 
 
 
@@ -104,17 +123,18 @@ async def get_new_session(
             access_token=new_session_token,
             user=user_data
         )
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="User doesn't exist"
-    )
+    raise UserNotFound()
 
 @auth_router.get(
     "/me",
-    response_model=UserResponseModel
+    response_model=UserWithBookAndReviews
 )
-async def get_curr_user(curr_user = Depends(get_curr_user)):
+async def get_curr_user(
+        curr_user = Depends(get_curr_user),
+        _: bool = Depends(role_checker)
+):
     return curr_user
+
 
 
 # only revokes access token not refresh token
