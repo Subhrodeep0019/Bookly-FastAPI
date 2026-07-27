@@ -21,6 +21,10 @@ class UserResponseModel(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+class UserVerifyResponse(BaseModel):
+    message: str
+    user: UserResponseModel
+
 class UserWithBookAndReviews(UserResponseModel):
     books: List[TableBook]
     reviews: List[Reviews]

@@ -1,9 +1,10 @@
 from uuid import uuid4
 from pwdlib import PasswordHash
 from datetime import timedelta, datetime, timezone
-import jwt
 from src.config import setting
+import jwt
 import logging
+from itsdangerous import URLSafeTimedSerializer
 
 
 access_token_expiry = 600 # 10 min
@@ -45,4 +46,21 @@ def decode_token(token: str) -> dict|None:
     except jwt.PyJWTError as e:
         logging.exception(e)
         return None
+
+
+serializer = URLSafeTimedSerializer(
+    secret_key=setting.JWT_SECRET,
+    salt="email-verification"
+)
+
+def create_url_safe_token(data: dict) -> str:
+    token = serializer.dumps(data)
+    return token
+
+def decode_url_safe_token(token: str) -> dict | None:
+    try:
+        token_data = serializer.loads(token, max_age=3600)
+        return token_data
+    except Exception as e:
+        logging.error(str(e))
 

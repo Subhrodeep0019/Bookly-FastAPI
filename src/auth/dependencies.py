@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import Request, HTTPException, status, Depends
+from fastapi import Request, Depends
 from fastapi.security import HTTPBearer
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .utils import decode_token
@@ -7,14 +7,9 @@ from src.db.redis_client import is_in_blocklist
 from src.db.main import get_session
 from src.db.model import User
 from .service import UserService
-from src.errors import (
-    InvalidToken,
-    RevokedToken,
-    AccessTokenRequired,
-    RefreshTokenRequired,
-    InsufficientPermission,
-    UserNotFound
-)
+from src.errors import ( InvalidToken, RevokedToken, AccountNotVerified,
+                         AccessTokenRequired, RefreshTokenRequired,
+                         InsufficientPermission, UserNotFound )
 
 
 user_service = UserService()
@@ -69,6 +64,8 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user_det: User = Depends(get_curr_user)):
+        if not user_det.is_verified:
+            raise AccountNotVerified()
         if user_det.role in self.allowed_roles:
             return True
         raise InsufficientPermission()

@@ -29,3 +29,13 @@ class UserService:
         else:
             # return None if user already exists
             return None
+
+    async def update_user(self,
+        curr_user: User,
+        new_data: dict,
+        session: AsyncSession
+    ) -> User:
+        for k, v in new_data.items():
+            setattr(curr_user, k, v)
+        await session.commit()
+        return curr_user
