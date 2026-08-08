@@ -47,6 +47,14 @@ class AccountNotVerified(BooklyException):
     """Account is not verified"""
     pass
 
+class VerificationError(BooklyException):
+    """Raised when email verification cannot be completed."""
+    pass
+
+class PasswordResetError(BooklyException):
+    """Raised when the password cannot be reset."""
+    pass
+
 def create_exception_handler(
         status_code: int,
         initial_details: Any
@@ -165,3 +173,24 @@ def register_all_errors(app: FastAPI):
             }
         )
     )
+    app.add_exception_handler(
+        PasswordResetError,
+        create_exception_handler(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            initial_details={
+                "message": "Password Reset Error",
+                "error_code": "password_reset_error"
+            }
+        )
+    )
+    app.add_exception_handler(
+        VerificationError,
+        create_exception_handler(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            initial_details={
+                "message": "Verification Error",
+                "error_code": "verification_error"
+            }
+        )
+    )
+

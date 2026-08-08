@@ -22,11 +22,8 @@ class BookService:
 
     async def get_a_book(self, book_uid: UUID, session: AsyncSession) -> Book | None:
 
-        statement = select(Book).where(Book.uid == book_uid)
-        result = await session.exec(statement)
-
-        # returns None if no books is found
-        return result.first() # returns a Book obj
+        # returns None if no book is found
+        return await session.get(Book, book_uid)
 
     async def create_book(self, book_details: ModelCreateBook, user_uid: str, session: AsyncSession):
 
@@ -45,9 +42,11 @@ class BookService:
 
         if book_to_upd is not None:
             upd_details_dict = upd_details.model_dump(exclude_unset=True)
+            
             for k, v in upd_details_dict.items():
                 setattr(book_to_upd, k, v)
             book_to_upd.updated_at = datetime.datetime.now()
+
             await session.commit()
             await session.refresh(book_to_upd)
             return book_to_upd

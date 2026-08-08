@@ -22,8 +22,7 @@ conf = ConnectionConfig(
 
 
 
-mail = FastMail(conf)
-
+mail =  FastMail(conf)
 
 def create_msg(recipients: List[str], sub: str, template_body: dict[str, Any]):
     message = MessageSchema(

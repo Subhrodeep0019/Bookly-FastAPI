@@ -46,3 +46,6 @@ class LoginResponseModel(BaseModel):
 class RefreshResponseModel(BaseModel):
     access_token: str
     user: UserDataModel
+
+class ResetPassModel(BaseModel):
+    new_password: str

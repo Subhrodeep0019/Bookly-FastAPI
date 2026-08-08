@@ -5,8 +5,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     JWT_SECRET: str
     JWT_ALGORITHM: str
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
+    REDIS_URL: str = "redis://localhost:6379"
 
     MAIL_USERNAME: str
     MAIL_PASSWORD: str
@@ -27,3 +26,6 @@ class Settings(BaseSettings):
     )
 
 setting = Settings()
+
+broker_url = setting.REDIS_URL
+result_backend = setting.REDIS_URL

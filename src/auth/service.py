@@ -1,6 +1,7 @@
 from .schemas import UserCreateModel
 from src.db.model import User
 from .utils import generate_hash
+from src.errors import PasswordResetError
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 
@@ -39,3 +40,17 @@ class UserService:
             setattr(curr_user, k, v)
         await session.commit()
         return curr_user
+
+    async def reset_pass(self,
+        new_pass: str,
+        user: User,
+        session: AsyncSession
+    ):
+        password = generate_hash(new_pass)
+        user.pswd = password
+        try:
+            await session.commit()
+            await session.refresh(user)
+        except Exception:
+            await session.rollback()
+            raise PasswordResetError()

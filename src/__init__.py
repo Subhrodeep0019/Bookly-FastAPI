@@ -16,7 +16,7 @@ register_all_errors(app)
 register_middleware(app)
 
 app.include_router(book_router, prefix=f"/{ver}/books", tags=["books"])
-app.include_router(auth_router,  prefix=f"/{ver}/auth", tags=["auth"])
+app.include_router(auth_router,  prefix=f"/{ver}/auth")
 app.include_router(review_router,  prefix=f"/{ver}", tags=["reviews"])
 
 @app.get("/")
