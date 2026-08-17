@@ -29,8 +29,9 @@ class ModelCreateBook(BaseModel):
 
 
 class ModelUpdBook(BaseModel):
-    title: str | None = None # value can be str or None, default value is None if str not provided
+    title: str | None = None
     author: str | None = None
     publisher: str | None = None
+    publish_date: datetime.date | None = None
     page_count: int | None = None
     language: str | None = None

@@ -21,14 +21,13 @@ class BookService:
         return my_books.all()
 
     async def get_a_book(self, book_uid: UUID, session: AsyncSession) -> Book | None:
-
         # returns None if no book is found
         return await session.get(Book, book_uid)
 
-    async def create_book(self, book_details: ModelCreateBook, user_uid: str, session: AsyncSession):
+    async def create_book(self, book_details: ModelCreateBook, user_uid: str, session: AsyncSession) -> Book:
 
         book_details_dict = book_details.model_dump()
-        new_book = Book(**book_details_dict)   #unpacks dict and Book() creates a TableBook obj and saves into new_book
+        new_book = Book(**book_details_dict)   #unpacks dict and Book() creates a TableBook ORM and saves into new_book
         new_book.user_uid = UUID(user_uid)
         session.add(new_book) # obj enter into session's pending state
         await session.commit() # actual SQL command is sent to psql
@@ -36,7 +35,7 @@ class BookService:
 
         return new_book
 
-    async def update_book(self,book_uid: UUID, upd_details: ModelUpdBook, session: AsyncSession):
+    async def update_book(self,book_uid: UUID, upd_details: ModelUpdBook, session: AsyncSession) -> Book | None:
 
         book_to_upd = await self.get_a_book(book_uid, session)
 
@@ -61,3 +60,6 @@ class BookService:
                 await session.commit()
 
         return book_to_delete
+
+def get_book_service() -> BookService:
+    return BookService()

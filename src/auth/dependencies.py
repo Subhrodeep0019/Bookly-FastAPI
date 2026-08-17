@@ -18,7 +18,7 @@ class TokenBearer(HTTPBearer):
     def __init__(self, auto_error = True):
         super().__init__(auto_error=auto_error)
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request) -> dict :
         creds = await super().__call__(request)
         token = creds.credentials
 

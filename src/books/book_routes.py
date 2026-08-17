@@ -11,20 +11,16 @@ from .schemas import (
 )
 
 from src.db.main import get_session
-from src.books.service import BookService
+from src.books.service import BookService, get_book_service
 from src.auth.dependencies import AccessTokenBearer, RoleChecker
 from src.errors import BookNotFound
 
-
-
-book_service = BookService()
 access_token_bearer = AccessTokenBearer()
-role_checker = RoleChecker(["admin", "user"])
+admin_user_role_checker = RoleChecker(["admin", "user"])
 
-
+# Depends(access_token_bearer), #removed
 book_router = APIRouter(dependencies=[
-    Depends(access_token_bearer),
-    Depends(role_checker)
+    Depends(admin_user_role_checker),
 ])
 
 
@@ -34,7 +30,7 @@ book_router = APIRouter(dependencies=[
 ) # response_model only verifies at last (while returning) and response matches ModelBook
 async def get_all_books(
     session: AsyncSession = Depends(get_session),
-    payload = Depends(access_token_bearer)
+    book_service: BookService = Depends(get_book_service)
 ):
     all_books = await book_service.get_all_books(session)
     return all_books
@@ -45,11 +41,13 @@ async def get_all_books(
 )
 async def get_my_books(
         session: AsyncSession = Depends(get_session),
-        payload: dict = Depends(access_token_bearer)
+        book_service: BookService = Depends(get_book_service),
+        payload: dict = Depends(access_token_bearer),
 ):
     my_uid = UUID(payload.get('user').get('user_uid'))
     my_books = await book_service.get_my_books(my_uid, session)
     return my_books
+
 
 # receives JSON, converted into pydantic obj while received in arg, then model_dump() convert it into dict.
 @book_router.post(
@@ -60,10 +58,11 @@ async def get_my_books(
 async def add_book(
     bookData: ModelCreateBook,
     session: AsyncSession = Depends(get_session),
-    payload: dict = Depends(access_token_bearer)
+    book_service: BookService = Depends(get_book_service),
+    payload: dict = Depends(access_token_bearer),
 ):
     user_uid = payload.get('user').get('user_uid')
-    new_created_book = await book_service.create_book(bookData,user_uid, session)
+    new_created_book = await book_service.create_book(bookData, user_uid, session)
 
     return new_created_book
 
@@ -75,13 +74,14 @@ async def add_book(
 async def get_a_book(
     bid: UUID,
     session: AsyncSession = Depends(get_session),
-    payload = Depends(access_token_bearer)
+    book_service: BookService = Depends(get_book_service),
 ):
     single_book = await book_service.get_a_book(bid, session)
     if not single_book:
         raise BookNotFound()
 
     return single_book
+
 
 @book_router.patch(
     "/{bid}",
@@ -90,13 +90,14 @@ async def get_a_book(
 async def upd_book(
     bid: UUID, updData: ModelUpdBook,
     session: AsyncSession = Depends(get_session),
-    payload = Depends(access_token_bearer)
+    book_service: BookService = Depends(get_book_service),
 ):
     updated_book = await book_service.update_book(bid, updData, session)
     if not updated_book:
         raise BookNotFound()
 
     return updated_book
+
 
 @book_router.delete(
     "/{bid}",
@@ -106,7 +107,7 @@ async def upd_book(
 async def del_book(
     bid: UUID,
     session: AsyncSession = Depends(get_session),
-    payload = Depends(access_token_bearer)
+    book_service: BookService = Depends(get_book_service),
 ):
     deleted_book = await book_service.delete_book(bid, session)
     if not deleted_book:

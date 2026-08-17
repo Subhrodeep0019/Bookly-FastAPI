@@ -24,7 +24,7 @@ from src.reviews.routes import access_token_bearer
 from src.celery_task import send_mail
 
 
-REFRESH_EXP_DAY = 2
+REFRESH_EXP_DAY = 2 # 2 days
 
 auth_router = APIRouter()
 user_service = UserService()
