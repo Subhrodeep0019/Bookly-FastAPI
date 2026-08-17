@@ -1,286 +1,233 @@
-# Bookly FastAPI
+# Bookly
 
-Bookly is a REST API for a book review service built with FastAPI, SQLModel, PostgreSQL, Redis, JWT authentication, and Alembic migrations.
-
-The project uses a layered structure with routers, schemas, services, database models, authentication dependencies, custom middleware, and centralized custom error handlers.
+Bookly is an asynchronous FastAPI REST API for a book-review service. It provides JWT-based authentication, role-protected book and review endpoints, Redis-backed logout, account verification, password-reset emails, and Alembic-managed PostgreSQL migrations.
 
 ## Features
 
-* User signup and login
-* JWT access and refresh token authentication
-* Token logout using Redis blocklist
-* Role-based route protection
-* Create, read, update, and delete books
-* Get books created by the logged-in user
-* Add reviews to books
-* Get reviews written by the logged-in user
-* View a book with its reviews
-* Async PostgreSQL database operations
-* Alembic database migrations
-* Custom HTTP request logging middleware
-* Centralized custom exception handling
+- User registration, login, account verification, and password reset
+- JWT access and refresh tokens
+- Redis blocklisting for logged-out access tokens
+- Role-based protection for book and review resources
+- Create, read, update, and delete books
+- Create reviews and retrieve the current user's books or reviews
+- Email delivery through FastAPI-Mail and Celery
+- Async PostgreSQL access using SQLModel and `asyncpg`
+- Alembic migrations, request logging middleware, and centralized error handling
+- Pytest coverage for book routes
 
-## Tech Stack
+## Tech stack
 
-* Python 3.14+
-* FastAPI
-* SQLModel
-* SQLAlchemy Async
-* PostgreSQL
-* asyncpg
-* Alembic
-* Redis
-* PyJWT
-* pwdlib with Argon2
-* Pydantic Settings
-* Uvicorn
-* uv
+- Python 3.14+
+- FastAPI, Uvicorn, and Pydantic Settings
+- SQLModel, SQLAlchemy async, PostgreSQL, and `asyncpg`
+- Alembic
+- Redis
+- PyJWT and `pwdlib[argon2]`
+- FastAPI-Mail, Celery, and Flower
+- uv and pytest
 
-## Project Structure
+## Project structure
 
 ```text
 Bookly/
 ├── src/
-│   ├── __init__.py              # FastAPI app, router registration, middleware/errors setup
-│   ├── config.py                # Environment-based app settings
-│   ├── errors.py                # Custom exceptions and handlers
-│   ├── middleware.py            # Custom request logging middleware
+│   ├── __init__.py              # FastAPI application and router setup
+│   ├── config.py                # Environment-based application, Redis, and mail settings
+│   ├── celery_task.py           # Celery task for asynchronous email delivery
+│   ├── mail.py                  # FastAPI-Mail configuration and message factory
+│   ├── middleware.py            # Custom HTTP request logging middleware
+│   ├── errors.py                # Application exceptions and error handlers
 │   ├── auth/
-│   │   ├── dependencies.py      # JWT bearer classes, current-user dependency, role checker
-│   │   ├── routes.py            # Signup, login, refresh, me, logout routes
-│   │   ├── schemas.py           # Auth/user request and response schemas
-│   │   ├── service.py           # User database operations
-│   │   └── utils.py             # Password hashing and JWT helpers
+│   │   ├── dependencies.py      # JWT, current-user, and role dependencies
+│   │   ├── routes.py            # Authentication, verification, and reset routes
+│   │   ├── schemas.py           # User and authentication schemas
+│   │   ├── service.py           # User persistence operations
+│   │   └── utils.py             # Password and token utilities
 │   ├── books/
-│   │   ├── book_routes.py       # Book routes
+│   │   ├── book_routes.py       # Book endpoints
 │   │   ├── schemas.py           # Book request and response schemas
-│   │   └── service.py           # Book database operations
+│   │   └── service.py           # Book persistence operations
+│   ├── reviews/
+│   │   ├── routes.py            # Review endpoints
+│   │   ├── schemas.py           # Review request and response schemas
+│   │   └── service.py           # Review persistence operations
 │   ├── db/
 │   │   ├── main.py              # Async database engine and session dependency
-│   │   ├── model.py             # SQLModel tables: User, TableBook, Reviews
-│   │   └── redis_client.py      # Redis token blocklist helpers
-│   └── reviews/
-│       ├── routes.py            # Review routes
-│       ├── schemas.py           # Review request and response schemas
-│       └── service.py           # Review database operations
+│   │   ├── model.py             # User, book, and review SQLModel tables
+│   │   └── redis_client.py      # Redis token-blocklist helpers
+│   ├── templates/
+│   │   ├── email_verification.html
+│   │   └── password_reset.html
+│   └── tests/
+│       ├── conftest.py          # Dependency overrides and shared test fixtures
+│       └── test_book.py         # Book-route tests
 ├── migration_fol/
-│   ├── env.py                   # Alembic migration environment
+│   ├── env.py                   # Alembic async migration environment
 │   ├── script.py.mako
-│   └── versions/                # Migration files
+│   └── versions/                # Database migration revisions
 ├── alembic.ini
 ├── pyproject.toml
 ├── uv.lock
 └── README.md
 ```
 
-## Installation
+## Setup
 
-Clone the repository:
-
-```bash
-git clone https://github.com/Subhrodeep0019/Bookly-FastAPI.git
-cd Bookly-FastAPI
-```
-
-Install dependencies:
+Install the locked project dependencies:
 
 ```bash
 uv sync
 ```
 
-Create a `.env` file in the project root:
+Create a `.env` file at the project root:
 
 ```env
 DATABASE_URL=postgresql+asyncpg://username:password@localhost:5432/bookly
-JWT_SECRET=your_jwt_secret
+JWT_SECRET=replace_with_a_secure_secret
 JWT_ALGORITHM=HS256
-REDIS_HOST=localhost
-REDIS_PORT=6379
+REDIS_URL=redis://localhost:6379
+
+MAIL_USERNAME=your_mail_username
+MAIL_PASSWORD=your_mail_password
+MAIL_FROM=your_email@example.com
+MAIL_FROM_NAME=Bookly
+MAIL_PORT=465
+MAIL_SERVER=smtp.example.com
+MAIL_STARTTLS=false
+MAIL_SSL_TLS=true
+USE_CREDENTIALS=true
+VALIDATE_CERTS=true
+
+DOMAIN=127.0.0.1:8000
 ```
 
-Make sure PostgreSQL and Redis are running before starting the API.
-
-Run database migrations:
+Start PostgreSQL and Redis, then apply the migrations:
 
 ```bash
 uv run alembic upgrade head
 ```
 
-Run the application:
+Start the API:
 
 ```bash
 uv run uvicorn src:app --reload
 ```
 
-The API will be available at:
+The API and interactive OpenAPI documentation are available at `http://127.0.0.1:8000` and `http://127.0.0.1:8000/docs`.
 
-```text
-http://127.0.0.1:8000
+## Background email worker
+
+Account-verification and password-reset messages are queued through Celery, using Redis as both the broker and result backend. Run a worker alongside the API:
+
+```bash
+uv run celery -A src.celery_task.c_app worker --loglevel=info
 ```
 
-Interactive API docs:
+Optionally monitor Celery tasks with Flower:
 
-```text
-http://127.0.0.1:8000/docs
+```bash
+uv run celery -A src.celery_task.c_app flower
 ```
 
-## Environment Variables
+## Environment variables
 
-| Variable | Required | Description |
+| Variable | Description |
+| --- | --- |
+| `DATABASE_URL` | Async PostgreSQL connection URL. |
+| `JWT_SECRET` | Secret used to sign JWTs. |
+| `JWT_ALGORITHM` | JWT signing algorithm, such as `HS256`. |
+| `REDIS_URL` | Redis URL used for the token blocklist and Celery. |
+| `MAIL_USERNAME` | SMTP account username. |
+| `MAIL_PASSWORD` | SMTP account password or app password. |
+| `MAIL_FROM` | Sender email address. |
+| `MAIL_FROM_NAME` | Display name for outgoing mail. |
+| `MAIL_PORT` | SMTP server port. |
+| `MAIL_SERVER` | SMTP server hostname. |
+| `MAIL_STARTTLS` | Enables STARTTLS for the SMTP connection. |
+| `MAIL_SSL_TLS` | Enables SSL/TLS for the SMTP connection. |
+| `USE_CREDENTIALS` | Enables SMTP authentication. |
+| `VALIDATE_CERTS` | Enables SMTP certificate validation. |
+| `DOMAIN` | Public host and port used when generating email links. |
+
+## API routes
+
+### General
+
+| Method | Endpoint | Description |
 | --- | --- | --- |
-| `DATABASE_URL` | Yes | Async PostgreSQL database URL used by SQLAlchemy |
-| `JWT_SECRET` | Yes | Secret key used to sign JWT tokens |
-| `JWT_ALGORITHM` | Yes | JWT signing algorithm, for example `HS256` |
-| `REDIS_HOST` | No | Redis host, defaults to `localhost` |
-| `REDIS_PORT` | No | Redis port, defaults to `6379` |
+| GET | `/` | Returns the API status message. |
 
-## API Routes
+### Authentication
 
-### Root
-
-| Method | Endpoint | Auth | Description |
+| Method | Endpoint | Authentication | Description |
 | --- | --- | --- | --- |
-| GET | `/` | No | Health check route |
-
-### Auth
-
-| Method | Endpoint | Auth | Description |
-| --- | --- | --- | --- |
-| POST | `/v1/auth/signup` | No | Create a new user |
-| POST | `/v1/auth/login` | No | Login and receive access and refresh tokens |
-| POST | `/v1/auth/refresh-token` | Refresh token | Create a new access token |
-| GET | `/v1/auth/me` | Access token | Get the current user with books and reviews |
-| POST | `/v1/auth/logout` | Access token | Blocklist the current access token |
+| POST | `/v1/auth/signup` | No | Creates an account and queues a verification email. |
+| POST | `/v1/auth/login` | No | Returns access and refresh tokens. |
+| POST | `/v1/auth/verify` | Access token | Queues another verification email. |
+| GET | `/v1/auth/verify/{safe_token}` | No | Verifies the account associated with the email token. |
+| POST | `/v1/auth/refresh-token` | Refresh token | Returns a new access token. |
+| GET | `/v1/auth/me` | Access token + role | Returns the current user with books and reviews. |
+| POST | `/v1/auth/logout` | Access token | Blocklists the current access token. |
+| GET | `/v1/auth/reset_pass` | Access token | Queues a password-reset email. |
+| PATCH | `/v1/auth/reset_pass/{token}` | No | Sets a new password using the reset token. |
 
 ### Books
 
-All book routes require a valid access token and an allowed role of `admin` or `user`.
+All book routes require an access token from an `admin` or `user` account.
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| GET | `/v1/books/` | Get all books ordered by newest first |
-| GET | `/v1/books/my_books` | Get books created by the logged-in user |
-| POST | `/v1/books/` | Create a new book |
-| GET | `/v1/books/{bid}` | Get one book by UUID, including its reviews |
-| PATCH | `/v1/books/{bid}` | Update a book by UUID |
-| DELETE | `/v1/books/{bid}` | Delete a book by UUID |
+| GET | `/v1/books/` | Lists all books, newest first. |
+| GET | `/v1/books/my_books` | Lists books created by the current user. |
+| POST | `/v1/books/` | Creates a book for the current user. |
+| GET | `/v1/books/{bid}` | Retrieves a book and its reviews. |
+| PATCH | `/v1/books/{bid}` | Updates a book by UUID. |
+| DELETE | `/v1/books/{bid}` | Deletes a book by UUID. |
 
 ### Reviews
 
-All review routes require a valid access token and an allowed role of `admin` or `user`.
+All review routes require an access token from an `admin` or `user` account.
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| POST | `/v1/books/{book_uid}/reviews` | Add a review to a book |
-| GET | `/v1/reviews/me` | Get reviews written by the logged-in user |
+| POST | `/v1/books/{book_uid}/reviews` | Adds a review to a book. |
+| GET | `/v1/reviews/me` | Lists reviews written by the current user. |
 
-## Authentication Flow
+## Authentication
 
-After login, the API returns:
-
-* `access_token`
-* `refresh_token`
-* basic user data
-
-Protected routes expect this header:
+Send access tokens to protected routes in the standard bearer header:
 
 ```http
 Authorization: Bearer <access_token>
 ```
 
-The refresh-token route expects a refresh token in the same bearer format. Access tokens and refresh tokens are validated by separate bearer dependencies, so using the wrong token type returns a custom error response.
+The refresh endpoint accepts a refresh token in the same format. Logging out stores the access token's `jti` in Redis, preventing that token from being used again.
 
-Logout blocklists the access token's `jti` value in Redis for 10 minutes.
+## Data model
 
-## Data Models
+- A user can create many books and write many reviews.
+- A book belongs to a user and can have many reviews.
+- A review belongs to one user and one book.
+- Reviews support ratings from 1 through 5.
 
-The main database tables are:
+## Testing
 
-* `users`
-* `books`
-* `reviews`
+Run the test suite with:
 
-Relationships:
-
-* A user can create many books.
-* A user can write many reviews.
-* A book can have many reviews.
-* A review belongs to one user and one book.
-
-## Custom Middleware
-
-The app registers a custom HTTP middleware in `src/middleware.py`.
-
-It logs each request with:
-
-* client host and port
-* HTTP method
-* request path
-* status code and status phrase
-* processing time in milliseconds
-
-Example log format:
-
-```text
-127.0.0.1:55000 - GET - /v1/books/ - 200 OK - 15.23ms
+```bash
+uv run pytest
 ```
 
-The default `uvicorn.access` logger is disabled so this custom log format is used instead.
+## Migrations
 
-## Custom Error Handling
-
-Custom app exceptions are defined in `src/errors.py` and registered on app startup through `register_all_errors(app)`.
-
-Current custom errors include:
-
-* `InvalidToken`
-* `RevokedToken`
-* `AccessTokenRequired`
-* `RefreshTokenRequired`
-* `UserAlreadyExists`
-* `InvalidCredentials`
-* `InsufficientPermission`
-* `UserNotFound`
-* `BookNotFound`
-
-Each handler returns a consistent JSON response with an HTTP status code and an `error_code`.
-
-Example:
-
-```json
-{
-  "message": "Book not found",
-  "error_code": "book_not_found"
-}
-```
-
-## Database Migrations
-
-Alembic is configured through `alembic.ini`, and migration files are stored in `migration_fol/versions`.
-
-Apply migrations:
+Apply all migrations:
 
 ```bash
 uv run alembic upgrade head
 ```
 
-Create a new migration:
+Create an autogenerated migration after changing the SQLModel tables:
 
 ```bash
-uv run alembic revision --autogenerate -m "migration message"
+uv run alembic revision --autogenerate -m "describe the change"
 ```
-
-## Current Learning Focus
-
-This project currently practices:
-
-* FastAPI routing and dependency injection
-* Async database sessions with SQLModel and SQLAlchemy
-* JWT authentication with access and refresh tokens
-* Password hashing with Argon2
-* Redis-backed token revocation
-* Role-based access control
-* Centralized error handling
-* Middleware-based request logging
-* Alembic migration workflow
-* Layered backend project organization
