@@ -19,7 +19,6 @@ from src.errors import ( UserAlreadyExists, InvalidCredentials,
                          UserNotFound, VerificationError )
 
 from src.config import setting
-from src.mail import mail, create_msg
 from src.reviews.routes import access_token_bearer
 from src.celery_task import send_mail
 
@@ -47,7 +46,7 @@ async def create_user(
     if new_user is not None:
         email = user_data.email
         safe_token = create_url_safe_token({"email": email})
-        ver_link = f"http://{setting.DOMAIN}/v1/auth/verify/{safe_token}"
+        ver_link = f"https://{setting.DOMAIN}/v1/auth/verify/{safe_token}"
         sub = "Account Verification"
         template_name = "email_verification.html"
         template_body = {
@@ -124,7 +123,7 @@ async def verify_acc(
     email = payload.get("user", {}).get("email")
 
     safe_token = create_url_safe_token({"email": email})
-    ver_link = f"http://{setting.DOMAIN}/v1/auth/verify/{safe_token}"
+    ver_link = f"https://{setting.DOMAIN}/v1/auth/verify/{safe_token}"
     sub = "Account Verification"
     template_name = "email_verification.html"
     template_body = {
@@ -235,7 +234,7 @@ async def forgot_password(
 
     token = create_url_safe_token({"email": email})
 
-    res_link = f"http://{setting.DOMAIN}/v1/auth/reset_pass/{token}"
+    res_link = f"https://{setting.DOMAIN}/v1/auth/reset_pass/{token}"
     sub = "Reset Password"
     template_body = {
         "RESET_LINK": res_link
