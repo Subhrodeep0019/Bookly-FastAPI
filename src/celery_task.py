@@ -25,12 +25,12 @@
 import resend
 from celery import Celery
 from jinja2 import Environment, FileSystemLoader
-from src.config import Settings
+from src.config import setting
 
 c_app = Celery()
 c_app.config_from_object('src.config')
 
-resend.api_key = Settings.RESEND_API_KEY
+resend.api_key = setting.RESEND_API_KEY
 
 jinja_env = Environment(loader=FileSystemLoader("src/templates"))
 
