@@ -15,3 +15,6 @@ wheels/
 
 # Local Python version
 .python-version
+
+# Extra
+.schemathesis/

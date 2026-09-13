@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool = True
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
+    RESEND_API_KEY: str
 
     DOMAIN: str
 
